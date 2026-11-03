@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+out
+build
+*.min.js
+package-lock.json
+yarn.lock
+apps/api/2026-PJ02.md
+apps/api/routes
+project_breif.pdf
+apps/api

@@ -1,0 +1,16 @@
+node_modules/
+.yarn/install-state.gz
+
+.env
+.env.*
+!.env.example
+
+# Build output
+.next/
+dist/
+out/
+*.tsbuildinfo
+
+# Misc
+.DS_Store
+*.pem
