@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 210 25% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --primary: 0 0% 9%;
@@ -30,5 +30,173 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01" on;
+  }
+}
+
+@layer components {
+  .hero-panel {
+    background:
+      radial-gradient(ellipse at 80% 15%, rgba(45, 212, 191, 0.2), transparent 35%),
+      linear-gradient(115deg, #101c2b 0%, #172c3c 56%, #123c3c 100%);
+  }
+  .hero-orb {
+    position: absolute;
+    width: 340px;
+    height: 340px;
+    border-radius: 9999px;
+    right: 11%;
+    top: -190px;
+    background: rgba(52, 211, 153, 0.15);
+    filter: blur(2px);
+  }
+  .hero-decoration {
+    position: absolute;
+    right: 7%;
+    top: 24%;
+    color: rgba(110, 231, 183, 0.16);
+    transform: rotate(-12deg);
+  }
+  .eyebrow {
+    color: #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .field-input {
+    width: 100%;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    padding: 0.78rem 1rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition:
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+  .field-input:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
+  }
+  .equipment-card {
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+  .equipment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.09);
+  }
+  .equipment-art {
+    position: relative;
+    display: flex;
+    height: 190px;
+    align-items: flex-start;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 1.1rem;
+  }
+  .art-0 {
+    background: linear-gradient(135deg, #e8f3f0, #d7e3e4);
+  }
+  .art-1 {
+    background: linear-gradient(135deg, #f1e9df, #e4ddd2);
+  }
+  .art-2 {
+    background: linear-gradient(135deg, #e4e8f2, #d6dce8);
+  }
+  .equipment-icon {
+    position: absolute;
+    left: 50%;
+    top: 53%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    color: #193c43;
+    filter: drop-shadow(8px 10px 5px rgba(15, 23, 42, 0.12));
+  }
+  .notice-error {
+    border: 1px solid #fecaca;
+    border-radius: 1rem;
+    background: #fef2f2;
+    padding: 1rem;
+    color: #b91c1c;
+    font-size: 0.875rem;
+  }
+  .notice-success {
+    border: 1px solid #a7f3d0;
+    border-radius: 1rem;
+    background: #ecfdf5;
+    padding: 1rem;
+    color: #047857;
+    font-size: 0.875rem;
+  }
+  .empty-state {
+    display: flex;
+    min-height: 220px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #cbd5e1;
+    border-radius: 1.5rem;
+    color: #64748b;
+    text-align: center;
+  }
+  .form-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .form-control {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    background: white;
+    padding: 0.72rem 0.85rem;
+    color: #0f172a;
+    outline: none;
+  }
+  .form-control:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
+  }
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    background: #0f172a;
+    padding: 0.72rem 1.15rem;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .action-button:hover {
+    background: #047857;
+  }
+  .action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .soft-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    padding: 0.65rem 1rem;
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .soft-button:hover {
+    background: #f8fafc;
   }
 }

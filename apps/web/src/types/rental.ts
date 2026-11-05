@@ -6,8 +6,8 @@ export interface Rental {
   equipment: Pick<
     Equipment,
     "_id" | "name" | "category" | "description" | "quantity" | "rentalRate" | "isActive"
-  >;
-  user: Pick<User, "name" | "email" | "role"> & { _id: string; tel: string };
+  > | null;
+  user?: Pick<User, "name" | "email" | "role"> & { _id: string; tel: string };
   /** 1–3 per request */
   quantity: number;
   /** ISO date */
