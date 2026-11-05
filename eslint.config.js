@@ -28,7 +28,7 @@ export default defineConfig([
     plugins: { prettier: prettierPlugin },
     rules: {
       "@next/next/no-html-link-for-pages": ["error", "apps/web/src/app/"],
-      "prettier/prettier": "error",
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
 ]);

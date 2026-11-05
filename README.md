@@ -60,6 +60,14 @@ apps/web/src
 └── types/               one file per resource (auth, equipment, rental)
 ```
 
+The web app includes an equipment catalogue with search and category filters, member registration
+and login, rental request creation and editing, and an administrator dashboard for equipment CRUD
+and reviewing all rental requests. Registration follows the supplied project API and offers both
+`member` and `admin` roles.
+
+Main routes: `/` catalogue, `/equipment/:id` equipment detail and rental request, `/rentals` rental
+requests, `/admin` equipment administration, `/login`, and `/register`.
+
 - Add shadcn components: `cd apps/web && npx shadcn@latest add <component>`
 - Add a Redux slice: create `store/slices/<name>Slice.ts`, register it in `store/index.ts`
 - Auth state (`state.auth`) is hydrated from localStorage on mount; the JWT is attached by `lib/api-client.ts`
