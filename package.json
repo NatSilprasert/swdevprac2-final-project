@@ -16,6 +16,7 @@
     "web:typecheck": "yarn workspace web typecheck",
     "api:dev": "yarn workspace api dev",
     "api:start": "yarn workspace api start",
+    "db:seed": "yarn workspace api seed",
     "db:up": "docker compose -f apps/api/docker-compose.yml up -d",
     "db:stop": "docker compose -f apps/api/docker-compose.yml stop",
     "db:down": "docker compose -f apps/api/docker-compose.yml down"

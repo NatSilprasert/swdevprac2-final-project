@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Camera, Dumbbell, Laptop, Search, ShieldCheck, Boxes } from "lucide-react";
+import { ArrowRight, Boxes, Camera, Dumbbell, Laptop, Search } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { assetTag, formatBaht } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import type { Equipment } from "@/types/equipment";
 
@@ -13,10 +14,12 @@ const categoryIcons: Record<string, typeof Camera> = {
   notebook: Laptop,
 };
 
+const ALL = "All";
+
 export function EquipmentCatalog() {
   const [items, setItems] = useState<Equipment[]>([]);
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All equipment");
+  const [category, setCategory] = useState(ALL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { user, hydrated } = useAppSelector((state) => state.auth);
@@ -30,11 +33,11 @@ export function EquipmentCatalog() {
   }, []);
 
   const categories = useMemo(
-    () => ["All equipment", ...Array.from(new Set(items.map((item) => item.category))).sort()],
+    () => [ALL, ...Array.from(new Set(items.map((item) => item.category))).sort()],
     [items]
   );
   const filtered = items.filter((item) => {
-    const matchesCategory = category === "All equipment" || item.category === category;
+    const matchesCategory = category === ALL || item.category === category;
     const matchesQuery = `${item.name} ${item.category} ${item.description}`
       .toLowerCase()
       .includes(query.toLowerCase());
@@ -42,51 +45,21 @@ export function EquipmentCatalog() {
   });
 
   return (
-    <div className="space-y-12 pb-12">
-      <section className="hero-panel relative overflow-hidden rounded-[2rem] px-6 py-12 text-white sm:px-12 sm:py-16">
-        <div className="hero-orb" />
-        <div className="relative z-10 max-w-2xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90">
-            <span className="h-2 w-2 rounded-full bg-emerald-300" /> EQUIPMENT RENTAL, MADE EASY
-          </div>
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            The right gear for <span className="text-emerald-300">what&apos;s next.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
-            Find cameras, computers, and sports equipment. Choose your dates and send a rental
-            request in just a few steps.
-          </p>
-          <a
-            href="#catalog"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
-          >
-            Explore equipment <ArrowRight size={16} />
-          </a>
-        </div>
-        <div className="hero-decoration" aria-hidden="true">
-          <Boxes size={170} strokeWidth={0.7} />
-        </div>
-        <div className="absolute bottom-8 right-10 hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/80 backdrop-blur sm:flex">
-          <ShieldCheck size={18} className="text-emerald-300" /> Simple, transparent daily rates
-        </div>
-      </section>
-
-      <section id="catalog" className="scroll-mt-8">
-        <div className="mb-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <p className="eyebrow">Browse the collection</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Available equipment</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Pick what you need. We&apos;ll take care of the rest.
-            </p>
-          </div>
+    <div className="pb-12">
+      <section>
+        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <h1 className="page-title">Available equipment</h1>
           <label className="relative block w-full sm:max-w-xs">
-            <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={16}
+              strokeWidth={1.5}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search equipment..."
-              className="field-input pl-11"
+              placeholder="Search"
+              className="form-control pl-9"
               aria-label="Search equipment"
             />
           </label>
@@ -96,74 +69,73 @@ export function EquipmentCatalog() {
             <button
               key={item}
               onClick={() => setCategory(item)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${category === item ? "bg-slate-950 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"}`}
+              aria-pressed={category === item}
+              className={`h-8 whitespace-nowrap rounded-lg px-3 text-sm transition-colors duration-150 ${
+                category === item
+                  ? "bg-primary text-primary-foreground"
+                  : "border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
             >
               {item}
             </button>
           ))}
         </div>
-        {error && <p className="notice-error">{error}. Check that the API server is running.</p>}
+        {error && (
+          <p className="notice-error mb-4">{error}. Check that the API server is running</p>
+        )}
         {loading ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="h-72 animate-pulse rounded-3xl bg-slate-100" />
+              <div key={item} className="skeleton h-72" />
             ))}
           </div>
         ) : filtered.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((item, index) => {
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((item) => {
               const Icon = categoryIcons[item.category.toLowerCase()] ?? Boxes;
+              const inStock = item.quantity > 0;
               return (
                 <article
                   key={item._id}
-                  className="equipment-card group overflow-hidden rounded-3xl border border-slate-200/80 bg-white"
+                  className="surface flex flex-col overflow-hidden transition-colors duration-150 hover:border-foreground/25"
                 >
-                  <div className={`equipment-art art-${index % 3}`}>
-                    <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold text-slate-700 backdrop-blur">
+                  <div className="relative m-2 flex h-36 items-center justify-center rounded-lg bg-muted">
+                    <span className="asset-tag absolute left-3 top-3">{assetTag(item)}</span>
+                    <span className="absolute right-3 top-3 text-xs text-muted-foreground">
                       {item.category}
                     </span>
-                    <Icon className="equipment-icon" size={68} strokeWidth={1.1} />
-                    <span className="absolute bottom-5 right-5 text-xs font-semibold text-slate-500">
-                      EQUIP / {String(index + 1).padStart(2, "0")}
-                    </span>
+                    <Icon size={40} strokeWidth={1.25} className="text-foreground/70" />
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-semibold tracking-tight">{item.name}</h3>
-                        <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-                      </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        {item.quantity} available
+                  <div className="flex flex-1 flex-col p-4 pt-3">
+                    <h3 className="text-base font-medium">{item.name}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {item.description}
+                    </p>
+                    <p className="mt-3 mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className={`status-dot ${inStock ? "" : "status-dot-off"}`} />
+                      <span className="num">
+                        {inStock ? `${item.quantity} available` : "Out of stock"}
                       </span>
-                    </div>
-                    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                      <p>
-                        <span className="text-lg font-semibold">
-                          ฿{item.rentalRate.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-slate-500"> / day</span>
+                    </p>
+                    <div className="mt-auto flex items-center justify-between border-t pt-4">
+                      <p className="num">
+                        <span className="text-base font-medium">{formatBaht(item.rentalRate)}</span>
+                        <span className="text-xs text-muted-foreground"> / day</span>
                       </p>
                       {hydrated && user?.role === "member" ? (
                         <Link
                           href={`/equipment/${item._id}`}
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+                          className="link inline-flex items-center gap-1 text-sm"
                         >
-                          Rent item <ArrowRight size={15} />
+                          Rent <ArrowRight size={14} strokeWidth={1.5} />
                         </Link>
-                      ) : user?.role === "admin" ? (
-                        <Link
-                          href="/admin"
-                          className="text-sm font-semibold text-slate-700 hover:text-emerald-700"
-                        >
+                      ) : hydrated && user?.role === "admin" ? (
+                        <Link href="/admin" className="link text-sm">
                           Manage
                         </Link>
                       ) : (
-                        <Link
-                          href="/login"
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
-                        >
-                          Sign in to rent <ArrowRight size={15} />
+                        <Link href="/login" className="link inline-flex items-center gap-1 text-sm">
+                          Sign in to rent <ArrowRight size={14} strokeWidth={1.5} />
                         </Link>
                       )}
                     </div>
@@ -174,9 +146,9 @@ export function EquipmentCatalog() {
           </div>
         ) : (
           <div className="empty-state">
-            <Boxes size={32} />
-            <p className="mt-3 font-medium">No equipment found</p>
-            <p className="mt-1 text-sm">Try a different search or category.</p>
+            <Boxes size={28} strokeWidth={1.5} />
+            <p className="mt-3 font-medium text-foreground">No equipment found</p>
+            <p className="mt-1 text-sm">Try a different search or category</p>
           </div>
         )}
       </section>
