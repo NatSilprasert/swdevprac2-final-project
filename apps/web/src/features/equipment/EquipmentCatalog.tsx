@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Boxes, Camera, Dumbbell, Laptop, Search } from "lucide-react";
+import { ArrowRight, Boxes, Camera, Dumbbell, Heart, Laptop, Search } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { assetTag, formatBaht } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
@@ -16,13 +16,55 @@ const categoryIcons: Record<string, typeof Camera> = {
 
 const ALL = "All";
 
-export function EquipmentCatalog() {
+export function EquipmentCatalog({ favoritesOnly = false }: { favoritesOnly?: boolean }) {
   const [items, setItems] = useState<Equipment[]>([]);
+  const [savedList, setSavedList] = useState<{ ownerId: string | null; ids: string[] }>({
+    ownerId: null,
+    ids: [],
+  });
+  const [savedLoaded, setSavedLoaded] = useState(false);
+  const [savingIds, setSavingIds] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(ALL);
+  const [sort, setSort] = useState("name");
+  const [availableOnly, setAvailableOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [savedError, setSavedError] = useState("");
   const { user, hydrated } = useAppSelector((state) => state.auth);
+  const userId = user?.id;
+  const savedIds = savedList.ownerId === userId ? savedList.ids : [];
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!userId) {
+      setSavedList({ ownerId: null, ids: [] });
+      setSavedLoaded(true);
+      return;
+    }
+
+    let active = true;
+    setSavedLoaded(false);
+    setSavedError("");
+    apiClient
+      .get<Equipment[]>("/saved-equipment")
+      .then((saved) => {
+        if (active) setSavedList({ ownerId: userId, ids: saved.map((item) => item._id) });
+      })
+      .catch((reason: Error) => {
+        if (active) {
+          setSavedList({ ownerId: userId, ids: [] });
+          setSavedError(reason.message);
+        }
+      })
+      .finally(() => {
+        if (active) setSavedLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hydrated, userId]);
 
   useEffect(() => {
     apiClient
@@ -36,19 +78,71 @@ export function EquipmentCatalog() {
     () => [ALL, ...Array.from(new Set(items.map((item) => item.category))).sort()],
     [items]
   );
-  const filtered = items.filter((item) => {
-    const matchesCategory = category === ALL || item.category === category;
-    const matchesQuery = `${item.name} ${item.category} ${item.description}`
-      .toLowerCase()
-      .includes(query.toLowerCase());
-    return matchesCategory && matchesQuery;
-  });
+  const filtered = items
+    .filter((item) => {
+      const matchesCategory = category === ALL || item.category === category;
+      const matchesQuery = `${item.name} ${item.category} ${item.description}`
+        .toLowerCase()
+        .includes(query.toLowerCase());
+      const matchesSaved = !favoritesOnly || savedIds.includes(item._id);
+      return (
+        matchesCategory && matchesQuery && matchesSaved && (!availableOnly || item.quantity > 0)
+      );
+    })
+    .sort((a, b) => {
+      if (sort === "price-asc") return a.rentalRate - b.rentalRate || a.name.localeCompare(b.name);
+      if (sort === "price-desc") return b.rentalRate - a.rentalRate || a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name);
+    });
+
+  async function toggleSaved(item: Equipment) {
+    if (!userId || savingIds.includes(item._id)) return;
+    const isSaved = savedIds.includes(item._id);
+    setSavingIds((ids) => [...ids, item._id]);
+    setSavedError("");
+    try {
+      if (isSaved) {
+        await apiClient.delete(`/saved-equipment/${item._id}`);
+        setSavedList((current) => ({
+          ownerId: userId,
+          ids: current.ownerId === userId ? current.ids.filter((id) => id !== item._id) : [],
+        }));
+      } else {
+        await apiClient.post(`/saved-equipment/${item._id}`);
+        setSavedList((current) => ({
+          ownerId: userId,
+          ids: current.ownerId === userId ? [...new Set([...current.ids, item._id])] : [item._id],
+        }));
+      }
+    } catch (reason) {
+      setSavedError((reason as Error).message);
+    } finally {
+      setSavingIds((ids) => ids.filter((id) => id !== item._id));
+    }
+  }
+
+  if (favoritesOnly && !hydrated) return <div className="skeleton h-64" />;
+  if (favoritesOnly && !user)
+    return (
+      <div className="empty-state">
+        <Heart size={28} strokeWidth={1.5} />
+        <p className="mt-3 font-medium text-foreground">Log in to see your saved equipment</p>
+        <Link href="/login" className="link mt-3 text-sm">
+          Log in
+        </Link>
+      </div>
+    );
 
   return (
     <div className="pb-12">
       <section>
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <h1 className="page-title">Available equipment</h1>
+          <div>
+            <h1 className="page-title">
+              {favoritesOnly ? "Saved equipment" : "Available equipment"}
+            </h1>
+            {favoritesOnly && <p className="page-lead">Saved items for your account</p>}
+          </div>
           <label className="relative block w-full sm:max-w-xs">
             <Search
               size={16}
@@ -80,10 +174,40 @@ export function EquipmentCatalog() {
             </button>
           ))}
         </div>
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={availableOnly}
+              onChange={(event) => setAvailableOnly(event.target.checked)}
+              className="h-4 w-4 accent-emerald-700"
+            />
+            Available now
+          </label>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground" aria-live="polite">
+              {filtered.length} {filtered.length === 1 ? "item" : "items"}
+            </span>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Sort by</span>
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value)}
+                className="form-control h-9 w-auto min-w-36"
+                aria-label="Sort equipment"
+              >
+                <option value="name">Name</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+              </select>
+            </label>
+          </div>
+        </div>
         {error && (
           <p className="notice-error mb-4">{error}. Check that the API server is running</p>
         )}
-        {loading ? (
+        {savedError && <p className="notice-error mb-4">{savedError}</p>}
+        {loading || (favoritesOnly && (!savedLoaded || savedList.ownerId !== userId)) ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div key={item} className="skeleton h-72" />
@@ -101,7 +225,40 @@ export function EquipmentCatalog() {
                 >
                   <div className="relative m-2 flex h-36 items-center justify-center rounded-lg bg-muted">
                     <span className="asset-tag absolute left-3 top-3">{assetTag(item)}</span>
-                    <span className="absolute right-3 top-3 text-xs text-muted-foreground">
+                    {hydrated && user ? (
+                      <button
+                        type="button"
+                        aria-label={
+                          savedIds.includes(item._id)
+                            ? `Remove ${item.name} from saved`
+                            : `Save ${item.name}`
+                        }
+                        aria-pressed={savedIds.includes(item._id)}
+                        disabled={
+                          !savedLoaded ||
+                          savedList.ownerId !== userId ||
+                          savingIds.includes(item._id)
+                        }
+                        onClick={() => toggleSaved(item)}
+                        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-card/90 text-muted-foreground transition-colors hover:text-rose-600 disabled:opacity-50"
+                      >
+                        <Heart
+                          size={16}
+                          strokeWidth={1.75}
+                          fill={savedIds.includes(item._id) ? "currentColor" : "none"}
+                          className={savedIds.includes(item._id) ? "text-rose-600" : ""}
+                        />
+                      </button>
+                    ) : (
+                      <Link
+                        href="/login"
+                        aria-label={`Sign in to save ${item.name}`}
+                        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-card/90 text-muted-foreground transition-colors hover:text-rose-600"
+                      >
+                        <Heart size={16} strokeWidth={1.75} />
+                      </Link>
+                    )}
+                    <span className="absolute bottom-3 right-3 text-xs text-muted-foreground">
                       {item.category}
                     </span>
                     <Icon size={40} strokeWidth={1.25} className="text-foreground/70" />
@@ -147,8 +304,21 @@ export function EquipmentCatalog() {
         ) : (
           <div className="empty-state">
             <Boxes size={28} strokeWidth={1.5} />
-            <p className="mt-3 font-medium text-foreground">No equipment found</p>
-            <p className="mt-1 text-sm">Try a different search or category</p>
+            <p className="mt-3 font-medium text-foreground">
+              {favoritesOnly && savedLoaded && savedIds.length === 0
+                ? "No saved equipment yet"
+                : "No equipment found"}
+            </p>
+            <p className="mt-1 text-sm">
+              {favoritesOnly && savedIds.length === 0
+                ? "Save items from the catalogue with the heart button"
+                : "Try a different search or category"}
+            </p>
+            {favoritesOnly && savedIds.length === 0 && (
+              <Link href="/" className="link mt-3 text-sm">
+                Browse equipment
+              </Link>
+            )}
           </div>
         )}
       </section>

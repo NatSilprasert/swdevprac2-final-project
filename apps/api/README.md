@@ -11,6 +11,7 @@ A RESTful backend API for managing equipment and rental requests. It supports us
 - JWT bearer-token authentication via the Authorization header only; login still sets an HTTP-only cookie, which is not used for authentication
 - Roles: `admin` and `member`
 - Protected routes and role-based authorization
+- Signed-in users can maintain a private saved equipment list; each account only reads and changes its own list
 - Registration accepts either role, following PJ01-SportFacility
 - Logout clears the cookie; clients must also discard their bearer token, which remains valid until expiration
 
@@ -116,6 +117,9 @@ The API runs on `http://localhost:5000` by default. Use a different `PORT` if PJ
 - `POST /api/v1/rentals` (member)
 - `PUT /api/v1/rentals/:id` (owner or admin)
 - `DELETE /api/v1/rentals/:id` (owner or admin)
+- `GET /api/v1/saved-equipment` (authenticated user; own saved equipment)
+- `POST /api/v1/saved-equipment/:equipmentId` (authenticated user; save active equipment)
+- `DELETE /api/v1/saved-equipment/:equipmentId` (authenticated user; remove from own saved list)
 
 Successful responses use `{ success: true, data }`, with `count` for lists. Registration and login return the JWT in `data.token`. Errors use `{ success: false, error }`. As in PJ01, unhandled database validation/cast errors reach the global error handler and default to HTTP 500; explicit rental rule failures return HTTP 400.
 
