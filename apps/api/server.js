@@ -135,7 +135,9 @@ const rentals = require("./routes/rentals");
 
 dotenv.config({ path: "./config/config.env" });
 
-if (process.env.MONGO_URI) {
+const isVercel = Boolean(process.env.VERCEL);
+
+if (process.env.MONGO_URI && !isVercel) {
   connectDB().catch((error) => {
     console.error(`Database connection failed: ${error.message}`);
     process.exit(1);
@@ -143,6 +145,22 @@ if (process.env.MONGO_URI) {
 }
 
 const app = express();
+
+// Behind Vercel's proxy, so rate limiting sees the real client IP.
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+
+// Serverless: connect on demand, reusing the cached connection between requests.
+if (isVercel) {
+  app.use(async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      console.error(`Database connection failed: ${error.message}`);
+      res.status(500).json({ success: false, error: "Database connection failed" });
+    }
+  });
+}
 
 app.use(helmet());
 app.use(hpp());
@@ -228,19 +246,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Equipment Rental API running on http://localhost:${PORT}`);
-});
+if (isVercel) {
+  // Vercel invokes the exported app itself; it must not listen on a port.
+  module.exports = app;
+} else {
+  const PORT = process.env.PORT || 5000;
+  const server = app.listen(PORT, () => {
+    console.log(`Equipment Rental API running on http://localhost:${PORT}`);
+  });
 
-process.on("unhandledRejection", (error) => {
-  console.error(`Unhandled rejection: ${error.message}`);
-  server.close(() => process.exit(1));
-});
+  process.on("unhandledRejection", (error) => {
+    console.error(`Unhandled rejection: ${error.message}`);
+    server.close(() => process.exit(1));
+  });
 
-process.on("uncaughtException", (error) => {
-  console.error(`Uncaught exception: ${error.message}`);
-  process.exit(1);
-});
+  process.on("uncaughtException", (error) => {
+    console.error(`Uncaught exception: ${error.message}`);
+    process.exit(1);
+  });
 
-module.exports = { app, server };
+  module.exports = { app, server };
+}
