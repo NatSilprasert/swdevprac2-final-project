@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Boxes, Camera, Check, Dumbbell, Laptop, Package } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
@@ -27,7 +27,16 @@ export function EquipmentDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [startDate, setStartDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
   const today = new Date().toISOString().slice(0, 10);
+  const rentalDays = useMemo(() => {
+    if (!startDate || !returnDate || returnDate < startDate) return null;
+    const start = new Date(`${startDate}T00:00:00Z`).getTime();
+    const end = new Date(`${returnDate}T00:00:00Z`).getTime();
+    return Math.max(1, (end - start) / 86_400_000);
+  }, [startDate, returnDate]);
 
   useEffect(() => {
     apiClient
@@ -156,13 +165,35 @@ export function EquipmentDetail() {
                 <Select
                   id="quantity"
                   name="quantity"
+                  onValueChange={(value) => setQuantity(Number(value))}
                   options={Array.from({ length: Math.min(3, item.quantity) }, (_, index) => ({
                     value: String(index + 1),
                     label: `${index + 1} ${index === 0 ? "unit" : "units"}`,
                   }))}
                 />
               </div>
-              <DateRangeFields idPrefix="rental" min={today} />
+              <DateRangeFields
+                idPrefix="rental"
+                min={today}
+                onDatesChange={(start, end) => {
+                  setStartDate(start);
+                  setReturnDate(end);
+                }}
+              />
+              {rentalDays !== null && (
+                <div
+                  className="flex items-center justify-between rounded-lg bg-muted px-4 py-3 text-sm"
+                  aria-live="polite"
+                >
+                  <span className="text-muted-foreground">
+                    Estimated total · {quantity} {quantity === 1 ? "unit" : "units"} · {rentalDays}{" "}
+                    {rentalDays === 1 ? "day" : "days"}
+                  </span>
+                  <strong className="num font-medium">
+                    {formatBaht(item.rentalRate * quantity * rentalDays)}
+                  </strong>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Up to 7 days per rental. Same-day return is allowed
               </p>

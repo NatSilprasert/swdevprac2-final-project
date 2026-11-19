@@ -167,6 +167,7 @@ interface DateRangeFieldsProps {
   min: string;
   defaultStart?: string;
   defaultReturn?: string;
+  onDatesChange?: (start: string, returnDate: string) => void;
 }
 
 /** Start and return date pickers. Return date can't be before the start date. */
@@ -175,6 +176,7 @@ export function DateRangeFields({
   min,
   defaultStart = "",
   defaultReturn = "",
+  onDatesChange,
 }: DateRangeFieldsProps) {
   const [start, setStart] = useState(defaultStart);
   const [ret, setRet] = useState(defaultReturn);
@@ -193,7 +195,9 @@ export function DateRangeFields({
           required
           onChange={(next) => {
             setStart(next);
-            if (ret && ret < next) setRet("");
+            const nextReturn = ret && ret < next ? "" : ret;
+            if (nextReturn !== ret) setRet(nextReturn);
+            onDatesChange?.(next, nextReturn);
           }}
         />
       </div>
@@ -207,7 +211,10 @@ export function DateRangeFields({
           value={ret}
           min={start && start > min ? start : min}
           required
-          onChange={setRet}
+          onChange={(next) => {
+            setRet(next);
+            onDatesChange?.(start, next);
+          }}
         />
       </div>
     </div>

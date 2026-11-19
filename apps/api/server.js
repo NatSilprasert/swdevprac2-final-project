@@ -132,6 +132,7 @@ const connectDB = require("./config/db");
 const auth = require("./routes/auth");
 const equipment = require("./routes/equipment");
 const rentals = require("./routes/rentals");
+const savedEquipment = require("./routes/savedEquipment");
 
 dotenv.config({ path: "./config/config.env" });
 
@@ -185,6 +186,7 @@ app.use(cors({
 app.use("/api/v1/auth", auth);
 app.use("/api/v1/equipment", equipment);
 app.use("/api/v1/rentals", rentals);
+app.use("/api/v1/saved-equipment", savedEquipment);
 
 const swaggerDocs = swaggerJsDoc({
   definition: {

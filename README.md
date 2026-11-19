@@ -35,11 +35,12 @@ yarn web:dev   # http://localhost:3000
 
 ## API summary (`/api/v1`)
 
-| Area      | Endpoints                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------ |
-| Auth      | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `GET /auth/logout`              |
-| Equipment | `GET /equipment`, `GET /equipment/:id` (public); `POST`, `PUT /:id`, `DELETE /:id` (admin) |
-| Rentals   | `GET /rentals`, `GET/PUT/DELETE /rentals/:id` (owner or admin); `POST /rentals` (member)   |
+| Area      | Endpoints                                                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Auth      | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `GET /auth/logout`                                                    |
+| Equipment | `GET /equipment`, `GET /equipment/:id` (public); `POST`, `PUT /:id`, `DELETE /:id` (admin)                                       |
+| Rentals   | `GET /rentals`, `GET/PUT/DELETE /rentals/:id` (owner or admin); `POST /rentals` (member)                                         |
+| Saved     | `GET /saved-equipment`, `POST /saved-equipment/:equipmentId`, `DELETE /saved-equipment/:equipmentId` (signed-in user's own list) |
 
 Envelope: success → `{ success: true, data, count? }`, failure → `{ success: false, error }`.
 Auth: `Authorization: Bearer <jwt>` (token is returned in `data.token` on login/register).
@@ -60,13 +61,15 @@ apps/web/src
 └── types/               one file per resource (auth, equipment, rental)
 ```
 
-The web app includes an equipment catalogue with search and category filters, member registration
-and login, rental request creation and editing, and an administrator dashboard for equipment CRUD
-and reviewing all rental requests. Registration follows the supplied project API and offers both
-`member` and `admin` roles.
+The web app includes an equipment catalogue with search, category and availability filters, and
+price sorting; a private, account-specific saved equipment list for signed-in users; a live rental
+cost estimate based on selected dates and quantity; member registration and login; rental request
+creation and editing; and an administrator dashboard for equipment CRUD and reviewing all rental
+requests. Registration follows the supplied project API and offers both `member` and `admin` roles.
 
-Main routes: `/` catalogue, `/equipment/:id` equipment detail and rental request, `/rentals` rental
-requests, `/admin` equipment administration, `/login`, and `/register`.
+Main routes: `/` catalogue, `/saved` signed-in user's saved equipment, `/equipment/:id` equipment
+detail and rental request, `/rentals` rental requests, `/admin` equipment administration, `/login`,
+and `/register`.
 
 - Add shadcn components: `cd apps/web && npx shadcn@latest add <component>`
 - Add a Redux slice: create `store/slices/<name>Slice.ts`, register it in `store/index.ts`

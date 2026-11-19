@@ -21,6 +21,9 @@ export function Navbar() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/">Equipment</Link>
           </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/saved">Saved</Link>
+          </Button>
           {hydrated && user ? (
             <>
               {user.role === "member" && (
